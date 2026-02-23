@@ -450,7 +450,12 @@ BLACK_KEYS_DEF.forEach(def => {
 let audioCtx = null;
 
 function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
   return audioCtx;
 }
 
@@ -530,7 +535,11 @@ function playChord() {
 // ── Events ───────────────────────────────────────────────────────────
 document.getElementById('rootSelect').addEventListener('change', render);
 document.getElementById('chordSelect').addEventListener('change', render);
-document.getElementById('playBtn').addEventListener('click', playChord);
+document.getElementById('playBtn').addEventListener('click', () => {
+  getAudioCtx(); // 强制激活音频
+  playChord();
+});
+
 
 // Click individual keys to hear them
 document.querySelectorAll('.key-w, .key-b').forEach(k => {
