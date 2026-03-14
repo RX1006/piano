@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Piano Chord Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e12;
+    --surface: #16161e;
+    --card: #1e1e2a;
+    --accent: #f0c060;
+    --accent2: #8060f0;
+    --white: #f4f0e8;
+    --muted: #888;
+    --key-white: #f8f4ec;
+    --key-black: #1a1a24;
+    --key-active: #f0c060;
+    --key-active-black: #c09030;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    letter-spacing: -0.02em;
+    color: var(--white);
+    margin-bottom: 0.3rem;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  header p {
+    color: var(--muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .selector-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .selector-group label {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-left: 0.2rem;
+  }
+
+  select {
+    background: var(--card);
+    border: 1px solid #333;
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    appearance: none;
+    min-width: 130px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus { border-color: var(--accent); }
+
+  .chord-display {
+    background: var(--card);
+    border: 1px solid #2a2a3a;
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    text-align: center;
+    margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 1;
+    min-width: 300px;
+  }
+
+  .chord-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  .chord-description {
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .notes-row {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .note-pill {
+    background: #25253a;
+    border: 1px solid #3a3a55;
+    border-radius: 100px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.85rem;
+    color: var(--white);
+  }
+
+  .note-pill.root {
+    background: rgba(240, 192, 96, 0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Piano */
+  .piano-wrapper {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+  }
+
+  .piano-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  .piano-scaler {
+    width: 100%;
+    max-width: 900px;
+    user-select: none;
+  }
+
+  .piano {
+    position: relative;
+    display: flex;
+    filter: drop-shadow(0 20px 60px rgba(0,0,0,0.6));
+  }
+
+  .white-keys { display: flex; position: relative; }
+
+  .key-w {
+    background: var(--key-white);
+    border: 1px solid #ccc;
+    border-radius: 0 0 8px 8px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
+    font-family: 'DM Mono', monospace;
+    color: #999;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .key-w:hover { background: #e8e4dc; }
+  .key-w.active { background: var(--key-active) !important; color: #5a3800; }
+
+  .black-keys { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+  .key-b {
+    background: var(--key-black);
+    border-radius: 0 0 6px 6px;
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 5px;
+    font-family: 'DM Mono', monospace;
+    color: #555;
+    pointer-events: all;
+    transition: background 0.15s;
+    z-index: 2;
+  }
+
+  .key-b:hover { background: #2a2a38; }
+  .key-b.active { background: var(--key-active-black) !important; color: #3a2000; }
+
+  /* Tips box */
+  .tip-box {
+    background: rgba(128, 96, 240, 0.08);
+    border: 1px solid rgba(128, 96, 240, 0.25);
+    border-radius: 12px;
+    padding: 1.2rem 1.6rem;
+    max-width: 560px;
+    margin-top: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tip-box h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: #a080ff;
+    margin-bottom: 0.6rem;
+  }
+
+  .tip-box p {
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: #aaa;
+  }
+
+  .play-btn {
+    background: var(--accent);
+    color: #1a0e00;
+    border: none;
+    border-radius: 100px;
+    padding: 0.7rem 2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .play-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(240, 192, 96, 0.3);
+  }
+
+  .play-btn:active { transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Piano <span>Chord</span> Generator</h1>
+  <p>Learn chords — for beginners</p>
+</header>
+
+<div class="controls">
+  <div class="selector-group">
+    <label>Root Note</label>
+    <select id="rootSelect">
+      <option value="C">C</option>
+      <option value="C#">C# / D♭</option>
+      <option value="D">D</option>
+      <option value="D#">D# / E♭</option>
+      <option value="E">E</option>
+      <option value="F">F</option>
+      <option value="F#">F# / G♭</option>
+      <option value="G">G</option>
+      <option value="G#">G# / A♭</option>
+      <option value="A">A</option>
+      <option value="A#">A# / B♭</option>
+      <option value="B">B</option>
+    </select>
+  </div>
+  <div class="selector-group">
+    <label>Chord Type</label>
+    <select id="chordSelect">
+      <option value="major">Major</option>
+      <option value="minor">Minor</option>
+      <option value="dominant7">Dominant 7th</option>
+      <option value="major7">Major 7th</option>
+      <option value="minor7">Minor 7th</option>
+      <option value="sus2">Sus2</option>
+      <option value="sus4">Sus4</option>
+      <option value="dim">Diminished</option>
+      <option value="aug">Augmented</option>
+    </select>
+  </div>
+  <button class="play-btn" id="playBtn">▶ Play Chord</button>
+</div>
+
+<div class="chord-display">
+  <div class="chord-name" id="chordName">C Major</div>
+  <div class="chord-description" id="chordDesc">Bright & Happy</div>
+  <div class="notes-row" id="notesRow"></div>
+</div>
+
+<div class="piano-wrapper">
+  <span class="piano-label">16 Keys — C4 to E5</span>
+  <div class="piano-scaler" id="pianoScaler">
+    <div class="piano" id="piano">
+      <div class="white-keys" id="whiteKeys"></div>
+      <div class="black-keys" id="blackKeys"></div>
+    </div>
+  </div>
+</div>
+
+<div class="tip-box">
+  <h3>💡 Beginner Tip</h3>
+  <p id="tipText"></p>
+</div>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────────────
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+const CHORD_TYPES = {
+  major:     { intervals:[0,4,7],    label:'Major',        desc:'Bright & Happy',       tip:'The major chord is the most common chord. Use fingers 1, 3, 5 (thumb, middle, pinky). Practice C major first — it only uses white keys!' },
+  minor:     { intervals:[0,3,7],    label:'Minor',        desc:'Dark & Emotional',     tip:'Minor chords feel more somber. Notice how the middle note (3rd) is one key lower than the major version. Use the same 1–3–5 fingering.' },
+  dominant7: { intervals:[0,4,7,10], label:'Dominant 7th', desc:'Bluesy & Tense',       tip:'The 7th chord adds a 4th note. It creates tension that "wants" to resolve to the major chord a 5th above. Common in blues and jazz.' },
+  major7:    { intervals:[0,4,7,11], label:'Major 7th',    desc:'Dreamy & Romantic',    tip:'Major 7th chords have a lush, dreamy sound. Common in jazz and R&B. The top note is just one semitone below the next octave.' },
+  minor7:    { intervals:[0,3,7,10], label:'Minor 7th',    desc:'Smooth & Jazzy',       tip:'Minor 7th chords are smooth and jazzy. They combine the sadness of minor with the tension of the 7th. Great for soul music.' },
+  sus2:      { intervals:[0,2,7],    label:'Sus2',         desc:'Open & Airy',          tip:'Sus chords replace the 3rd with another note, creating an "unresolved" sound. Sus2 uses the 2nd — it feels open and floating.' },
+  sus4:      { intervals:[0,5,7],    label:'Sus4',         desc:'Tense & Floating',     tip:'Sus4 uses the 4th instead of the 3rd. It creates anticipation — like a chord waiting to "fall back" to a major chord.' },
+  dim:       { intervals:[0,3,6],    label:'Diminished',   desc:'Eerie & Unstable',     tip:'Diminished chords are symmetrical — all intervals are 3 semitones apart. They sound spooky and are often used as a passing chord.' },
+  aug:       { intervals:[0,4,8],    label:'Augmented',    desc:'Strange & Mysterious', tip:'Augmented chords are also symmetrical — all intervals are 4 semitones. They sound unsettled and mysterious, great for tension.' },
+};
+
+// ── 16-Key Layout: C4 (midi 60) → E5 (midi 76) ──────────────────────
+// 10 white keys, 7 black keys = 17 physical keys spanning 16 semitones
+
+const WHITE_KEYS_DEF = [
+  { label:'C4', midi:60 },
+  { label:'D',  midi:62 },
+  { label:'E',  midi:64 },
+  { label:'F',  midi:65 },
+  { label:'G',  midi:67 },
+  { label:'A',  midi:69 },
+  { label:'B',  midi:71 },
+  { label:'C5', midi:72 },
+  { label:'D',  midi:74 },
+  { label:'E',  midi:76 },
+];
+
+// afterWhite: 0-based index of the white key immediately LEFT of this black key
+const BLACK_KEYS_DEF = [
+  { label:'C#', midi:61, afterWhite:0 },
+  { label:'D#', midi:63, afterWhite:1 },
+  { label:'F#', midi:66, afterWhite:3 },
+  { label:'G#', midi:68, afterWhite:4 },
+  { label:'A#', midi:70, afterWhite:5 },
+  { label:'C#', midi:73, afterWhite:7 },
+  { label:'D#', midi:75, afterWhite:8 },
+];
+
+const NUM_WHITE = WHITE_KEYS_DEF.length; // 10
+
+// ── Piano Build ───────────────────────────────────────────────────────
+const whiteKeysEl = document.getElementById('whiteKeys');
+const blackKeysEl = document.getElementById('blackKeys');
+const pianoEl     = document.getElementById('piano');
+const scalerEl    = document.getElementById('pianoScaler');
+
+function buildPiano() {
+  whiteKeysEl.innerHTML = '';
+  blackKeysEl.innerHTML = '';
+
+  const containerW = scalerEl.offsetWidth || (window.innerWidth - 32);
+  const kW  = Math.floor(containerW / NUM_WHITE);
+  const kH  = Math.round(kW * 3.5);
+  const bW  = Math.round(kW * 0.62);
+  const bH  = Math.round(kH * 0.62);
+  const fSz = Math.max(8, Math.round(kW * 0.16));
+  const bFSz = Math.max(6, Math.round(bW * 0.20));
+
+  pianoEl.style.width  = (kW * NUM_WHITE) + 'px';
+  pianoEl.style.height = kH + 'px';
+
+  WHITE_KEYS_DEF.forEach(def => {
+    const k = document.createElement('div');
+    k.className = 'key-w';
+    k.style.width    = kW + 'px';
+    k.style.height   = kH + 'px';
+    k.style.fontSize = fSz + 'px';
+    k.dataset.midi   = def.midi;
+    k.textContent    = def.label;
+    whiteKeysEl.appendChild(k);
+    k.addEventListener('click', () => playNote(midiToFreq(def.midi), 0.8));
+  });
+
+  BLACK_KEYS_DEF.forEach(def => {
+    const k = document.createElement('div');
+    k.className = 'key-b';
+    k.style.width    = bW + 'px';
+    k.style.height   = bH + 'px';
+    k.style.fontSize = bFSz + 'px';
+    k.style.left     = Math.round((def.afterWhite + 1) * kW - bW / 2) + 'px';
+    k.dataset.midi   = def.midi;
+    k.textContent    = def.label;
+    blackKeysEl.appendChild(k);
+    k.addEventListener('click', () => playNote(midiToFreq(def.midi), 0.8));
+  });
+}
+
+// ── Audio ─────────────────────────────────────────────────────────────
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playNote(freq, duration = 1.5) {
+  const ctx  = getAudioCtx();
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  gain.gain.setValueAtTime(0, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + duration);
+}
+
+function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+// ── Chord Logic ───────────────────────────────────────────────────────
+function getChordMidis(rootNote, chordType) {
+  const rootIdx   = NOTES.indexOf(rootNote);
+  const intervals = CHORD_TYPES[chordType].intervals;
+  const baseMidi  = 60 + rootIdx;
+  return intervals.map(i => baseMidi + i);
+}
+
+function getNoteFromMidi(midi) { return NOTES[midi % 12]; }
+
+// ── Render ────────────────────────────────────────────────────────────
+function render() {
+  const root  = document.getElementById('rootSelect').value;
+  const type  = document.getElementById('chordSelect').value;
+  const def   = CHORD_TYPES[type];
+  const midis = getChordMidis(root, type);
+
+  document.getElementById('chordName').textContent = `${root} ${def.label}`;
+  document.getElementById('chordDesc').textContent = def.desc;
+
+  const notesRow = document.getElementById('notesRow');
+  notesRow.innerHTML = '';
+  midis.map(getNoteFromMidi).forEach((n, i) => {
+    const pill = document.createElement('div');
+    pill.className = 'note-pill' + (i === 0 ? ' root' : '');
+    pill.textContent = n;
+    notesRow.appendChild(pill);
+  });
+
+  document.querySelectorAll('.key-w, .key-b').forEach(k => k.classList.remove('active'));
+  midis.forEach(midi => {
+    document.querySelectorAll(`[data-midi="${midi}"]`).forEach(k => k.classList.add('active'));
+  });
+
+  document.getElementById('tipText').textContent = def.tip;
+}
+
+function playChord() {
+  const root  = document.getElementById('rootSelect').value;
+  const type  = document.getElementById('chordSelect').value;
+  const midis = getChordMidis(root, type);
+  midis.forEach((midi, i) => setTimeout(() => playNote(midiToFreq(midi)), i * 80));
+}
+
+// ── Events & Init ─────────────────────────────────────────────────────
+document.getElementById('rootSelect').addEventListener('change', render);
+document.getElementById('chordSelect').addEventListener('change', render);
+document.getElementById('playBtn').addEventListener('click', playChord);
+window.addEventListener('resize', () => { buildPiano(); render(); });
+
+buildPiano();
+render();
+</script>
+</body>
+</html>
