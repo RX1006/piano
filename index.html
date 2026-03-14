@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tiny Piano 🎹</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #FFF8F0;
+  --sky:       #E8F4FF;
+  --red:       #FF6B6B;
+  --orange:    #FF9F43;
+  --yellow:    #FFD93D;
+  --green:     #6BCB77;
+  --blue:      #4D96FF;
+  --purple:    #C77DFF;
+  --pink:      #FF85A1;
+  --teal:      #48CAE4;
+  --dark:      #2D2D2D;
+  --mid:       #666;
+  --light:     #FFF;
+  --key-white: #FFFDF8;
+  --key-black: #3A3A4A;
+  --shadow:    rgba(0,0,0,0.12);
+  --radius-lg: 24px;
+  --radius-xl: 36px;
+}
+
+body {
+  background: var(--bg);
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 5rem;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── Floating background stars/dots ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(255,107,107,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 10%, rgba(77,150,255,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(107,203,119,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 70%, rgba(255,159,67,0.08) 0%, transparent 30%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Decorative floating dots ── */
+.dot {
+  position: fixed;
+  border-radius: 50%;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+  animation: float linear infinite;
+}
+@keyframes float {
+  0%   { transform: translateY(0px) rotate(0deg); }
+  50%  { transform: translateY(-18px) rotate(180deg); }
+  100% { transform: translateY(0px) rotate(360deg); }
+}
+
+/* ── Header / Logo ── */
+.site-header {
+  width: 100%;
+  background: linear-gradient(135deg, #FF9F43 0%, #FF6B6B 50%, #C77DFF 100%);
+  padding: 1.4rem 2rem 1.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 6px 24px rgba(255, 107, 107, 0.25);
+}
+
+/* Wavy bottom edge */
+.site-header::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: var(--bg);
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.logo-icon {
+  width: 64px;
+  height: 64px;
+  background: white;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15), inset 0 -3px 0 rgba(0,0,0,0.08);
+  animation: wiggle 3s ease-in-out infinite;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50%       { transform: rotate(3deg); }
+}
+
+.logo-icon svg { width: 40px; height: 40px; }
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.logo-name {
+  font-family: 'Fredoka One', cursive;
+  font-size: 2.4rem;
+  color: white;
+  letter-spacing: 0.02em;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+.logo-tagline {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 0.1rem;
+}
+
+/* ── Main content area ── */
+.main {
+  width: 100%;
+  max-width: 860px;
+  padding: 2.5rem 1.2rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Controls card ── */
+.controls-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem 1.8rem;
+  width: 100%;
+  box-shadow: 0 8px 32px var(--shadow), 0 0 0 3px rgba(255,159,67,0.15);
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.selector-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.selector-group label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mid);
+  padding-left: 0.3rem;
+}
+
+select {
+  background: var(--bg);
+  border: 3px solid #E8E0D8;
+  color: var(--dark);
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.65rem 1rem;
+  border-radius: 14px;
+  cursor: pointer;
+  appearance: none;
+  min-width: 140px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+select:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 4px rgba(255,159,67,0.2);
+}
+
+/* ── Chord Display ── */
+.chord-display {
+  width: 100%;
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 1.8rem 2rem;
+  text-align: center;
+  box-shadow: 0 8px 32px var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.chord-display::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, var(--red), var(--orange), var(--yellow), var(--green), var(--blue), var(--purple));
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.chord-name {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(2.8rem, 8vw, 4.5rem);
+  color: var(--dark);
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+
+.chord-name .chord-root { color: var(--red); }
+.chord-name .chord-type { color: var(--blue); }
+
+.chord-description {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mid);
+  margin-bottom: 1rem;
+}
+
+.notes-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.note-pill {
+  border-radius: 100px;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+  background: #F0EBE3;
+  color: var(--dark);
+  border: 2px solid transparent;
+  transition: transform 0.15s;
+}
+
+.note-pill:hover { transform: scale(1.08); }
+
+.note-pill.root {
+  background: var(--yellow);
+  color: #5a3800;
+  border-color: #e6c000;
+  box-shadow: 0 3px 10px rgba(255,217,61,0.4);
+}
+
+/* ── Play Button ── */
+.play-btn {
+  background: linear-gradient(135deg, var(--green) 0%, var(--teal) 100%);
+  color: white;
+  border: none;
+  border-radius: 100px;
+  padding: 0.85rem 2.2rem;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.15rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #3aab4a, 0 8px 20px rgba(107,203,119,0.4);
+  transition: transform 0.1s, box-shadow 0.1s;
+  position: relative;
+  top: 0;
+  white-space: nowrap;
+}
+
+.play-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 0 #3aab4a, 0 12px 24px rgba(107,203,119,0.45);
+}
+
+.play-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #3aab4a, 0 4px 12px rgba(107,203,119,0.3);
+}
+
+/* ── Piano ── */
+.piano-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.piano-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #bbb;
+}
+
+.piano-scaler {
+  width: 100%;
+  user-select: none;
+}
+
+.piano {
+  position: relative;
+  display: flex;
+  filter: drop-shadow(0 12px 32px rgba(0,0,0,0.18));
+}
+
+.white-keys { display: flex; position: relative; }
+
+.key-w {
+  background: var(--key-white);
+  border: 2px solid #D8D0C8;
+  border-top: 3px solid #E8E0D8;
+  border-radius: 0 0 14px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10px;
+  font-family: 'Fredoka One', cursive;
+  color: #C8C0B8;
+  transition: background 0.1s, transform 0.1s;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.key-w:hover {
+  background: #FFF5E0;
+}
+
+.key-w:active { transform: scaleY(0.97); transform-origin: top center; }
+
+/* Each white key gets a rainbow color when active */
+.key-w.active { color: white !important; }
+.key-w.active:nth-child(1)  { background: #FF6B6B !important; border-color: #e05555; }
+.key-w.active:nth-child(2)  { background: #FF9F43 !important; border-color: #e08830; }
+.key-w.active:nth-child(3)  { background: #FFD93D !important; border-color: #e0bc20; color: #7a6000 !important; }
+.key-w.active:nth-child(4)  { background: #6BCB77 !important; border-color: #52b05f; }
+.key-w.active:nth-child(5)  { background: #4D96FF !important; border-color: #357de0; }
+.key-w.active:nth-child(6)  { background: #C77DFF !important; border-color: #a860e0; }
+.key-w.active:nth-child(7)  { background: #FF85A1 !important; border-color: #e06882; }
+.key-w.active:nth-child(8)  { background: #48CAE4 !important; border-color: #30adc8; }
+.key-w.active:nth-child(9)  { background: #FF9F43 !important; border-color: #e08830; }
+.key-w.active:nth-child(10) { background: #6BCB77 !important; border-color: #52b05f; }
+
+.black-keys { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+.key-b {
+  background: linear-gradient(180deg, #3A3A4A 0%, #252530 100%);
+  border-radius: 0 0 10px 10px;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 5px;
+  font-family: 'Fredoka One', cursive;
+  color: #666;
+  pointer-events: all;
+  transition: background 0.1s;
+  z-index: 2;
+  box-shadow: 0 6px 0 #111118, 0 8px 12px rgba(0,0,0,0.3);
+}
+
+.key-b:hover { background: linear-gradient(180deg, #4a4a5a 0%, #333340 100%); }
+.key-b:active { box-shadow: 0 2px 0 #111118; transform: translateY(2px); }
+.key-b.active {
+  background: linear-gradient(180deg, #C77DFF 0%, #9b50e0 100%) !important;
+  box-shadow: 0 2px 0 #7030b0, 0 4px 12px rgba(199,125,255,0.4) !important;
+  color: white;
+}
+
+/* ── Tip box ── */
+.tip-box {
+  width: 100%;
+  background: linear-gradient(135deg, #E8F4FF 0%, #F0F8FF 100%);
+  border: 3px solid #C8E0FF;
+  border-radius: var(--radius-xl);
+  padding: 1.3rem 1.6rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.tip-emoji {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+
+.tip-content h3 {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1rem;
+  color: var(--blue);
+  margin-bottom: 0.3rem;
+}
+
+.tip-content p {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.6;
+  color: #557;
+}
+
+/* ── Footer note for parents ── */
+.parent-note {
+  width: 100%;
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 1.4rem 1.8rem;
+  box-shadow: 0 4px 16px var(--shadow);
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.parent-note-icon { font-size: 2rem; flex-shrink: 0; line-height: 1; }
+
+.parent-note-text h3 {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1rem;
+  color: var(--purple);
+  margin-bottom: 0.25rem;
+}
+
+.parent-note-text p {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--mid);
+  line-height: 1.5;
+}
+
+/* ── Key bounce animation on play ── */
+@keyframes keyPop {
+  0%   { transform: scaleY(1); }
+  30%  { transform: scaleY(0.93); }
+  60%  { transform: scaleY(1.04); }
+  100% { transform: scaleY(1); }
+}
+
+.key-w.pop { animation: keyPop 0.3s ease; }
+</style>
+</head>
+<body>
+
+<!-- Floating decorative dots -->
+<div class="dot" style="width:80px;height:80px;background:var(--yellow);top:12%;left:3%;animation-duration:6s;"></div>
+<div class="dot" style="width:50px;height:50px;background:var(--pink);top:25%;right:5%;animation-duration:4.5s;animation-delay:-1s;"></div>
+<div class="dot" style="width:35px;height:35px;background:var(--teal);top:60%;left:2%;animation-duration:5.5s;animation-delay:-2s;"></div>
+<div class="dot" style="width:60px;height:60px;background:var(--green);top:70%;right:3%;animation-duration:7s;animation-delay:-0.5s;"></div>
+
+<!-- ── Logo / Header ── -->
+<header class="site-header">
+  <div class="logo">
+    <div class="logo-icon">
+      <!-- Tiny piano SVG logo -->
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Piano body -->
+        <rect x="3" y="10" width="34" height="22" rx="4" fill="#FF9F43"/>
+        <rect x="3" y="10" width="34" height="5" rx="4" fill="#FF6B6B"/>
+        <!-- White keys -->
+        <rect x="6"  y="15" width="4" height="14" rx="2" fill="white"/>
+        <rect x="11" y="15" width="4" height="14" rx="2" fill="white"/>
+        <rect x="16" y="15" width="4" height="14" rx="2" fill="white"/>
+        <rect x="21" y="15" width="4" height="14" rx="2" fill="white"/>
+        <rect x="26" y="15" width="4" height="14" rx="2" fill="white"/>
+        <rect x="31" y="15" width="4" height="14" rx="2" fill="white"/>
+        <!-- Black keys -->
+        <rect x="9"  y="15" width="3" height="9" rx="1.5" fill="#3A3A4A"/>
+        <rect x="14" y="15" width="3" height="9" rx="1.5" fill="#3A3A4A"/>
+        <rect x="24" y="15" width="3" height="9" rx="1.5" fill="#3A3A4A"/>
+        <rect x="29" y="15" width="3" height="9" rx="1.5" fill="#3A3A4A"/>
+        <!-- Legs -->
+        <rect x="7"  y="30" width="4" height="6" rx="2" fill="#e08830"/>
+        <rect x="29" y="30" width="4" height="6" rx="2" fill="#e08830"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <span class="logo-name">tiny piano</span>
+      <span class="logo-tagline">chord generator</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main ── -->
+<div class="main">
+
+  <!-- Controls -->
+  <div class="controls-card">
+    <div class="selector-group">
+      <label>🎵 Root Note</label>
+      <select id="rootSelect">
+        <option value="C">C</option>
+        <option value="C#">C# / D♭</option>
+        <option value="D">D</option>
+        <option value="D#">D# / E♭</option>
+        <option value="E">E</option>
+        <option value="F">F</option>
+        <option value="F#">F# / G♭</option>
+        <option value="G">G</option>
+        <option value="G#">G# / A♭</option>
+        <option value="A">A</option>
+        <option value="A#">A# / B♭</option>
+        <option value="B">B</option>
+      </select>
+    </div>
+    <div class="selector-group">
+      <label>🎸 Chord Type</label>
+      <select id="chordSelect">
+        <option value="major">Major</option>
+        <option value="minor">Minor</option>
+        <option value="dominant7">Dominant 7th</option>
+        <option value="major7">Major 7th</option>
+        <option value="minor7">Minor 7th</option>
+        <option value="sus2">Sus2</option>
+        <option value="sus4">Sus4</option>
+        <option value="dim">Diminished</option>
+        <option value="aug">Augmented</option>
+      </select>
+    </div>
+    <button class="play-btn" id="playBtn">▶ Play Chord</button>
+  </div>
+
+  <!-- Chord Display -->
+  <div class="chord-display">
+    <div class="chord-name" id="chordName">
+      <span class="chord-root">C</span> <span class="chord-type">Major</span>
+    </div>
+    <div class="chord-description" id="chordDesc">Bright &amp; Happy</div>
+    <div class="notes-row" id="notesRow"></div>
+  </div>
+
+  <!-- Piano -->
+  <div class="piano-wrapper">
+    <div class="piano-label">16 Keys — C4 to E5 · Tap any key!</div>
+    <div class="piano-scaler" id="pianoScaler">
+      <div class="piano" id="piano">
+        <div class="white-keys" id="whiteKeys"></div>
+        <div class="black-keys" id="blackKeys"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tip Box -->
+  <div class="tip-box">
+    <div class="tip-emoji" id="tipEmoji">💡</div>
+    <div class="tip-content">
+      <h3>Did you know?</h3>
+      <p id="tipText"></p>
+    </div>
+  </div>
+
+  <!-- Parent Note -->
+  <div class="parent-note">
+    <div class="parent-note-icon">
+      <!-- Cute SVG: big parent + tiny toddler side by side at a piano, chibi style -->
+      <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+        <!-- Parent body -->
+        <ellipse cx="26" cy="52" rx="13" ry="11" fill="#FF9F43"/>
+        <!-- Parent head -->
+        <circle cx="26" cy="28" r="11" fill="#FFDBA8"/>
+        <!-- Parent hair -->
+        <ellipse cx="26" cy="19" rx="11" ry="6" fill="#C77DFF"/>
+        <ellipse cx="16" cy="24" rx="4" ry="7" fill="#C77DFF"/>
+        <!-- Parent eyes -->
+        <circle cx="22" cy="27" r="1.8" fill="#3A3A4A"/>
+        <circle cx="30" cy="27" r="1.8" fill="#3A3A4A"/>
+        <!-- Parent smile -->
+        <path d="M21 33 Q26 38 31 33" stroke="#e07050" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        <!-- Parent arms down toward piano -->
+        <path d="M14 50 Q10 60 13 64" stroke="#FF9F43" stroke-width="5" stroke-linecap="round"/>
+        <path d="M38 50 Q42 60 39 64" stroke="#FF9F43" stroke-width="5" stroke-linecap="round"/>
+
+        <!-- Toddler body -->
+        <ellipse cx="52" cy="55" rx="9" ry="8" fill="#4D96FF"/>
+        <!-- Toddler head -->
+        <circle cx="52" cy="38" r="9" fill="#FFDBA8"/>
+        <!-- Toddler hair (little tufts) -->
+        <ellipse cx="52" cy="30" rx="8" ry="4.5" fill="#FF6B6B"/>
+        <ellipse cx="47" cy="32" rx="3" ry="5" fill="#FF6B6B"/>
+        <ellipse cx="57" cy="32" rx="3" ry="5" fill="#FF6B6B"/>
+        <!-- Toddler eyes (bigger, cuter) -->
+        <circle cx="48.5" cy="37" r="2.2" fill="#3A3A4A"/>
+        <circle cx="55.5" cy="37" r="2.2" fill="#3A3A4A"/>
+        <!-- Toddler eye shine -->
+        <circle cx="49.5" cy="36" r="0.7" fill="white"/>
+        <circle cx="56.5" cy="36" r="0.7" fill="white"/>
+        <!-- Toddler big grin -->
+        <path d="M46 43 Q52 49 58 43" stroke="#e05060" stroke-width="2" stroke-linecap="round" fill="none"/>
+        <!-- Toddler tiny arms up with joy -->
+        <path d="M44 52 Q38 46 36 42" stroke="#4D96FF" stroke-width="4" stroke-linecap="round"/>
+        <path d="M60 52 Q66 46 68 42" stroke="#4D96FF" stroke-width="4" stroke-linecap="round"/>
+
+        <!-- Musical note floating above toddler -->
+        <text x="60" y="22" font-size="12" fill="#FFD93D" opacity="0.9">♪</text>
+        <text x="28" y="14" font-size="10" fill="#6BCB77" opacity="0.8">♫</text>
+
+      </svg>
+    </div>
+    <div class="parent-note-text">
+      <h3>For Parents</h3>
+      <p>Tap a chord, then tap individual keys together with your little one! Hearing chords early helps build music intuition. Try C Major first — all white keys, easy to find!</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────────────
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+const CHORD_TYPES = {
+  major:     { intervals:[0,4,7],    label:'Major',        desc:'Bright & Happy',       emoji:'☀️', tip:'The major chord is the most common chord. Use fingers 1, 3, 5 (thumb, middle, pinky). Practice C major first — it only uses white keys!' },
+  minor:     { intervals:[0,3,7],    label:'Minor',        desc:'Dark & Emotional',     emoji:'🌙', tip:'Minor chords feel more somber. Notice how the middle note (3rd) is one key lower than the major version. Use the same 1–3–5 fingering.' },
+  dominant7: { intervals:[0,4,7,10], label:'Dominant 7th', desc:'Bluesy & Tense',       emoji:'🎸', tip:'The 7th chord adds a 4th note. It creates tension that "wants" to resolve. Common in blues and jazz — very cool sound!' },
+  major7:    { intervals:[0,4,7,11], label:'Major 7th',    desc:'Dreamy & Romantic',    emoji:'✨', tip:'Major 7th chords sound lush and dreamy. The top note is just one key below the next C. Common in jazz and R&B.' },
+  minor7:    { intervals:[0,3,7,10], label:'Minor 7th',    desc:'Smooth & Jazzy',       emoji:'🎷', tip:'Minor 7th chords are smooth and jazzy. They combine the sadness of minor with a touch of that 7th chord tension.' },
+  sus2:      { intervals:[0,2,7],    label:'Sus2',         desc:'Open & Airy',          emoji:'🌬️', tip:'Sus chords sound "unfinished" — like they\'re floating in the air waiting for something! Sus2 replaces the 3rd with the 2nd note.' },
+  sus4:      { intervals:[0,5,7],    label:'Sus4',         desc:'Tense & Floating',     emoji:'🎈', tip:'Sus4 feels like it\'s waiting to fall back to major. It creates beautiful anticipation — a chord in suspense!' },
+  dim:       { intervals:[0,3,6],    label:'Diminished',   desc:'Eerie & Unstable',     emoji:'👻', tip:'Diminished chords sound spooky! All three notes are exactly 3 semitones apart. Great for scary movie music!' },
+  aug:       { intervals:[0,4,8],    label:'Augmented',    desc:'Strange & Mysterious', emoji:'🔮', tip:'Augmented chords sound mysterious and strange. All intervals are 4 semitones apart — perfectly symmetrical and eerie!' },
+};
+
+// ── 16-Key Layout: C4 (60) → E5 (76) ────────────────────────────────
+const WHITE_KEYS_DEF = [
+  { label:'C4', midi:60 },
+  { label:'D',  midi:62 },
+  { label:'E',  midi:64 },
+  { label:'F',  midi:65 },
+  { label:'G',  midi:67 },
+  { label:'A',  midi:69 },
+  { label:'B',  midi:71 },
+  { label:'C5', midi:72 },
+  { label:'D',  midi:74 },
+  { label:'E',  midi:76 },
+];
+
+const BLACK_KEYS_DEF = [
+  { label:'C#', midi:61, afterWhite:0 },
+  { label:'D#', midi:63, afterWhite:1 },
+  { label:'F#', midi:66, afterWhite:3 },
+  { label:'G#', midi:68, afterWhite:4 },
+  { label:'A#', midi:70, afterWhite:5 },
+  { label:'C#', midi:73, afterWhite:7 },
+  { label:'D#', midi:75, afterWhite:8 },
+];
+
+const NUM_WHITE = WHITE_KEYS_DEF.length;
+
+// ── Build Piano ───────────────────────────────────────────────────────
+const whiteKeysEl = document.getElementById('whiteKeys');
+const blackKeysEl = document.getElementById('blackKeys');
+const pianoEl     = document.getElementById('piano');
+const scalerEl    = document.getElementById('pianoScaler');
+
+function buildPiano() {
+  whiteKeysEl.innerHTML = '';
+  blackKeysEl.innerHTML = '';
+
+  const containerW = scalerEl.offsetWidth || (window.innerWidth - 32);
+  const kW  = Math.floor(containerW / NUM_WHITE);
+  const kH  = Math.round(kW * 3.6);
+  const bW  = Math.round(kW * 0.62);
+  const bH  = Math.round(kH * 0.60);
+  const fSz = Math.max(9, Math.round(kW * 0.17));
+  const bFSz = Math.max(7, Math.round(bW * 0.20));
+
+  pianoEl.style.width  = (kW * NUM_WHITE) + 'px';
+  pianoEl.style.height = kH + 'px';
+
+  WHITE_KEYS_DEF.forEach(def => {
+    const k = document.createElement('div');
+    k.className = 'key-w';
+    k.style.width    = kW + 'px';
+    k.style.height   = kH + 'px';
+    k.style.fontSize = fSz + 'px';
+    k.dataset.midi   = def.midi;
+    k.textContent    = def.label;
+    whiteKeysEl.appendChild(k);
+    k.addEventListener('click', () => {
+      playNote(midiToFreq(def.midi), 0.8);
+      k.classList.add('pop');
+      k.addEventListener('animationend', () => k.classList.remove('pop'), { once: true });
+    });
+  });
+
+  BLACK_KEYS_DEF.forEach(def => {
+    const k = document.createElement('div');
+    k.className = 'key-b';
+    k.style.width    = bW + 'px';
+    k.style.height   = bH + 'px';
+    k.style.fontSize = bFSz + 'px';
+    k.style.left     = Math.round((def.afterWhite + 1) * kW - bW / 2) + 'px';
+    k.dataset.midi   = def.midi;
+    k.textContent    = def.label;
+    blackKeysEl.appendChild(k);
+    k.addEventListener('click', () => playNote(midiToFreq(def.midi), 0.8));
+  });
+}
+
+// ── Audio ─────────────────────────────────────────────────────────────
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playNote(freq, duration = 1.5) {
+  const ctx  = getAudioCtx();
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  gain.gain.setValueAtTime(0, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + duration);
+}
+
+function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+// ── Chord Logic ───────────────────────────────────────────────────────
+function getChordMidis(rootNote, chordType) {
+  const rootIdx   = NOTES.indexOf(rootNote);
+  const intervals = CHORD_TYPES[chordType].intervals;
+  return intervals.map(i => 60 + rootIdx + i);
+}
+
+function getNoteFromMidi(midi) { return NOTES[midi % 12]; }
+
+// ── Render ────────────────────────────────────────────────────────────
+function render() {
+  const root  = document.getElementById('rootSelect').value;
+  const type  = document.getElementById('chordSelect').value;
+  const def   = CHORD_TYPES[type];
+  const midis = getChordMidis(root, type);
+
+  // Chord name with colored spans
+  document.getElementById('chordName').innerHTML =
+    `<span class="chord-root">${root}</span> <span class="chord-type">${def.label}</span>`;
+  document.getElementById('chordDesc').textContent = def.desc;
+
+  // Note pills
+  const notesRow = document.getElementById('notesRow');
+  notesRow.innerHTML = '';
+  midis.map(getNoteFromMidi).forEach((n, i) => {
+    const pill = document.createElement('div');
+    pill.className = 'note-pill' + (i === 0 ? ' root' : '');
+    pill.textContent = n;
+    notesRow.appendChild(pill);
+  });
+
+  // Highlight keys
+  document.querySelectorAll('.key-w, .key-b').forEach(k => k.classList.remove('active'));
+  midis.forEach(midi => {
+    document.querySelectorAll(`[data-midi="${midi}"]`).forEach(k => k.classList.add('active'));
+  });
+
+  // Tip + emoji
+  document.getElementById('tipText').textContent = def.tip;
+  document.getElementById('tipEmoji').textContent = def.emoji;
+}
+
+function playChord() {
+  const root  = document.getElementById('rootSelect').value;
+  const type  = document.getElementById('chordSelect').value;
+  const midis = getChordMidis(root, type);
+  midis.forEach((midi, i) => setTimeout(() => playNote(midiToFreq(midi)), i * 80));
+
+  // Animate active white keys
+  document.querySelectorAll('.key-w.active').forEach((k, i) => {
+    setTimeout(() => {
+      k.classList.add('pop');
+      k.addEventListener('animationend', () => k.classList.remove('pop'), { once: true });
+    }, i * 80);
+  });
+}
+
+// ── Events & Init ─────────────────────────────────────────────────────
+document.getElementById('rootSelect').addEventListener('change', render);
+document.getElementById('chordSelect').addEventListener('change', render);
+document.getElementById('playBtn').addEventListener('click', playChord);
+window.addEventListener('resize', () => { buildPiano(); render(); });
+
+buildPiano();
+render();
+</script>
+</body>
+</html>
